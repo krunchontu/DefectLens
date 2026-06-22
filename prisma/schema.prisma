@@ -1,0 +1,34 @@
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model Defect {
+  id                    String   @id @default(cuid())
+  title                 String
+  module                String
+  environment           String
+  severity              String
+  status                String
+  expectedResult        String
+  actualResult          String
+  stepsToReproduce      String
+  affectedCaseIds       String
+  notes                 String?
+
+  rootCauseCategory     String?
+  rootCauseExplanation  String?
+  similarRiskAreas      String?
+  preventionActions     String?
+  uatScenarios          String?
+  cabSummary            String?
+  releaseRisk           String?
+  rollbackConsideration String?
+
+  createdAt             DateTime @default(now())
+  updatedAt             DateTime @updatedAt
+}
