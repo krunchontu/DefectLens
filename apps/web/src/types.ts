@@ -23,6 +23,18 @@ export type DefectSummary = {
   updatedAt: string;
 };
 
+export type PreventionProgressEntry = {
+  done: boolean;
+  updatedAt: string;
+};
+
+export type PreventionProgress = Record<string, PreventionProgressEntry>;
+
+export type PreventionSummary = {
+  completed: number;
+  total: number;
+};
+
 export type Defect = DefectSummary & {
   expectedResult: string;
   actualResult: string;
@@ -31,6 +43,8 @@ export type Defect = DefectSummary & {
   rootCauseExplanation?: string | null;
   similarRiskAreas: string[];
   preventionActions: string[];
+  preventionProgress: PreventionProgress;
+  preventionSummary: PreventionSummary;
   uatScenarios: UatScenario[];
   cabSummary?: string | null;
   releaseRisk?: Severity | null;
@@ -58,6 +72,24 @@ export type Dashboard = {
   byRootCause: Array<{ category: string; count: number }>;
   highRiskModules: Array<{ module: string; count: number }>;
   recentDefects: Array<{ id: string; title: string; severity: Severity; status: Status; createdAt: string }>;
+};
+
+export type DefectListQuery = {
+  status?: Status;
+  severity?: Severity;
+  module?: string;
+  environment?: Environment;
+  q?: string;
+  page?: number;
+  pageSize?: number;
+};
+
+export type PagedResponse<T> = {
+  items: T[];
+  page: number;
+  pageSize: number;
+  total: number;
+  totalPages: number;
 };
 
 export type ApiError = {

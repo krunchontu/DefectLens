@@ -337,8 +337,9 @@ button:disabled {
 .form-grid,
 .meta-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(0, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(180px, 1fr));
   gap: 14px;
+  align-items: end;
 }
 
 label {
@@ -531,4 +532,18 @@ tbody tr:hover {
   .analysis-panel {
     position: static;
   }
+}
+
+/* Pagination */
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 16px;
+  padding: 12px 0;
+}
+
+.pagination span {
+  font-size: 0.88rem;
+  color: var(--muted);
 }

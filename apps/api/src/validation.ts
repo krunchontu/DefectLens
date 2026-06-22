@@ -56,5 +56,23 @@ export const analysisSchema = z.object({
   rollbackConsideration: requiredString
 });
 
+export const preventionToggleSchema = z.object({
+  action: requiredString,
+  done: z.boolean()
+});
+
+const MAX_PAGE_SIZE = 50;
+
+export const defectListQuerySchema = z.object({
+  status: z.enum(statusValues).optional(),
+  severity: z.enum(severityValues).optional(),
+  module: z.string().trim().optional(),
+  environment: z.enum(environmentValues).optional(),
+  q: z.string().trim().optional(),
+  page: z.coerce.number().int().min(1).default(1),
+  pageSize: z.coerce.number().int().min(1).max(MAX_PAGE_SIZE).default(20)
+});
+
 export type CreateDefectInput = z.infer<typeof createDefectSchema>;
 export type UpdateDefectInput = z.infer<typeof updateDefectSchema>;
+export type DefectListQuery = z.infer<typeof defectListQuerySchema>;

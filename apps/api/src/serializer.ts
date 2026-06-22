@@ -1,5 +1,5 @@
 import type { Defect } from "@prisma/client";
-import type { UatScenario } from "./types";
+import type { PreventionProgress, UatScenario } from "./types";
 
 function parseJsonArray<T>(value: string | null): T[] {
   if (!value) {
@@ -14,11 +14,32 @@ function parseJsonArray<T>(value: string | null): T[] {
   }
 }
 
+export function parsePreventionProgress(value: string | null): PreventionProgress {
+  if (!value) {
+    return {};
+  }
+  try {
+    const parsed = JSON.parse(value);
+    return typeof parsed === "object" && parsed !== null && !Array.isArray(parsed) ? parsed : {};
+  } catch {
+    return {};
+  }
+}
+
+function preventionSummary(progress: PreventionProgress, totalActions: number) {
+  const completed = Object.values(progress).filter((entry) => entry.done).length;
+  return { completed, total: totalActions };
+}
+
 export function serializeDefect(defect: Defect) {
+  const preventionActions = parseJsonArray<string>(defect.preventionActions);
+  const preventionProgress = parsePreventionProgress(defect.preventionProgress);
   return {
     ...defect,
     similarRiskAreas: parseJsonArray<string>(defect.similarRiskAreas),
-    preventionActions: parseJsonArray<string>(defect.preventionActions),
+    preventionActions,
+    preventionProgress,
+    preventionSummary: preventionSummary(preventionProgress, preventionActions.length),
     uatScenarios: parseJsonArray<UatScenario>(defect.uatScenarios),
     createdAt: defect.createdAt.toISOString(),
     updatedAt: defect.updatedAt.toISOString()

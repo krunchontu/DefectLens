@@ -3,8 +3,9 @@ import express from "express";
 import { analyzeDefect } from "./aiService";
 import { asyncHandler, errorHandler, HttpError } from "./errors";
 import { prisma } from "./prisma";
-import { serializeDefect, serializeDefectSummary } from "./serializer";
-import { createDefectSchema, updateDefectSchema } from "./validation";
+import { parsePreventionProgress, serializeDefect, serializeDefectSummary } from "./serializer";
+import { createDefectSchema, defectListQuerySchema, preventionToggleSchema, updateDefectSchema } from "./validation";
+import type { PreventionProgress } from "./types";
 
 export const app = express();
 
@@ -24,24 +25,52 @@ app.get("/api/health", (_req, res) => {
 
 app.get(
   "/api/defects",
-  asyncHandler(async (_req, res) => {
-    const defects = await prisma.defect.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        module: true,
-        environment: true,
-        severity: true,
-        status: true,
-        affectedCaseIds: true,
-        rootCauseCategory: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+  asyncHandler(async (req, res) => {
+    const query = defectListQuerySchema.parse(req.query);
+    const { status, severity, module, environment, q, page, pageSize } = query;
 
-    res.json(defects.map(serializeDefectSummary));
+    const where: Record<string, unknown> = {};
+    if (status) where.status = status;
+    if (severity) where.severity = severity;
+    if (module) where.module = { contains: module };
+    if (environment) where.environment = environment;
+    if (q) {
+      where.OR = [
+        { title: { contains: q } },
+        { module: { contains: q } },
+        { affectedCaseIds: { contains: q } }
+      ];
+    }
+
+    const [defects, total] = await Promise.all([
+      prisma.defect.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          title: true,
+          module: true,
+          environment: true,
+          severity: true,
+          status: true,
+          affectedCaseIds: true,
+          rootCauseCategory: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      }),
+      prisma.defect.count({ where })
+    ]);
+
+    res.json({
+      items: defects.map(serializeDefectSummary),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize)
+    });
   })
 );
 
@@ -125,8 +154,52 @@ app.post(
         uatScenarios: JSON.stringify(analysis.uatScenarios),
         cabSummary: analysis.cabSummary,
         releaseRisk: analysis.releaseRisk,
-        rollbackConsideration: analysis.rollbackConsideration
+        rollbackConsideration: analysis.rollbackConsideration,
+        // Reconcile prevention progress: keep entries that still exist in new actions
+        preventionProgress: JSON.stringify(
+          reconcilePreventionProgress(
+            parsePreventionProgress(existing.preventionProgress),
+            analysis.preventionActions
+          )
+        )
       }
+    });
+
+    res.json(serializeDefect(defect));
+  })
+);
+
+function reconcilePreventionProgress(
+  existing: PreventionProgress,
+  newActions: string[]
+): PreventionProgress {
+  const reconciled: PreventionProgress = {};
+  for (const action of newActions) {
+    if (existing[action]) {
+      reconciled[action] = existing[action];
+    }
+  }
+  return reconciled;
+}
+
+app.patch(
+  "/api/defects/:id/prevention",
+  asyncHandler(async (req, res) => {
+    const input = preventionToggleSchema.parse(req.body);
+    const existing = await prisma.defect.findUnique({ where: { id: req.params.id } });
+    if (!existing) {
+      throw new HttpError(404, "Defect not found", "NOT_FOUND");
+    }
+
+    const progress = parsePreventionProgress(existing.preventionProgress);
+    progress[input.action] = {
+      done: input.done,
+      updatedAt: new Date().toISOString()
+    };
+
+    const defect = await prisma.defect.update({
+      where: { id: req.params.id },
+      data: { preventionProgress: JSON.stringify(progress) }
     });
 
     res.json(serializeDefect(defect));

@@ -24,6 +24,7 @@ model Defect {
   rootCauseExplanation  String?
   similarRiskAreas      String?
   preventionActions     String?
+  preventionProgress    String?
   uatScenarios          String?
   cabSummary            String?
   releaseRisk           String?

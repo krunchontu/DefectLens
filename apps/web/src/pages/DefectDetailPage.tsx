@@ -89,6 +89,31 @@ export default function DefectDetailPage() {
     window.setTimeout(() => setCopied(false), 1600);
   };
 
+  const togglePrevention = async (action: string, done: boolean) => {
+    if (!id || !defect) {
+      return;
+    }
+    // Optimistic update
+    setDefect({
+      ...defect,
+      preventionProgress: {
+        ...defect.preventionProgress,
+        [action]: { done, updatedAt: new Date().toISOString() }
+      },
+      preventionSummary: {
+        ...defect.preventionSummary,
+        completed: defect.preventionSummary.completed + (done ? 1 : -1)
+      }
+    });
+    try {
+      const updated = await api.togglePrevention(id, action, done);
+      setDefect(updated);
+    } catch {
+      // Revert on failure by reloading
+      load();
+    }
+  };
+
   if (loading) {
     return <div className="state-card">Loading defect...</div>;
   }
@@ -210,11 +235,20 @@ export default function DefectDetailPage() {
               </section>
 
               <section>
-                <h4>Prevention Checklist</h4>
+                <div className="panel-title-row compact-row">
+                  <h4>Prevention Checklist</h4>
+                  <span className="badge neutral">
+                    {defect.preventionSummary.completed}/{defect.preventionSummary.total} complete
+                  </span>
+                </div>
                 <div className="checklist">
                   {defect.preventionActions.map((item) => (
                     <label key={item}>
-                      <input type="checkbox" />
+                      <input
+                        type="checkbox"
+                        checked={defect.preventionProgress[item]?.done ?? false}
+                        onChange={(e) => togglePrevention(item, e.target.checked)}
+                      />
                       <span>{item}</span>
                     </label>
                   ))}
