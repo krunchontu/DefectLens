@@ -6,6 +6,13 @@ export type UatScenario = {
   then: string;
 };
 
+export type PreventionProgressEntry = {
+  done: boolean;
+  updatedAt: string;
+};
+
+export type PreventionProgress = Record<string, PreventionProgressEntry>;
+
 export type AnalysisOutput = {
   rootCauseCategory: string;
   rootCauseExplanation: string;

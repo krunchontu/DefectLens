@@ -1,6 +1,7 @@
 import { FormEvent, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api, ApiClientError } from "../api";
+import { useNotify } from "../NotificationContext";
 import type { DefectInput, Environment, Severity, Status } from "../types";
 
 const environments: Environment[] = ["DEV", "SIT", "UAT", "Staging", "Production"];
@@ -35,6 +36,7 @@ export default function CreateDefectPage() {
   const [error, setError] = useState<string | null>(null);
   const [saving, setSaving] = useState(false);
   const navigate = useNavigate();
+  const notify = useNotify();
 
   const update = <K extends keyof DefectInput>(key: K, value: DefectInput[K]) => {
     setForm((current) => ({ ...current, [key]: value }));
@@ -62,6 +64,7 @@ export default function CreateDefectPage() {
     setSaving(true);
     try {
       const defect = await api.createDefect(form);
+      notify("success", "Defect created successfully");
       navigate(`/defects/${defect.id}`);
     } catch (err) {
       if (err instanceof ApiClientError) {

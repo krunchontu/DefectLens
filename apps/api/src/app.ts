@@ -2,9 +2,12 @@ import cors from "cors";
 import express from "express";
 import { analyzeDefect } from "./aiService";
 import { asyncHandler, errorHandler, HttpError } from "./errors";
+import { recordEvent } from "./events";
 import { prisma } from "./prisma";
-import { serializeDefect, serializeDefectSummary } from "./serializer";
-import { createDefectSchema, updateDefectSchema } from "./validation";
+import { parsePreventionProgress, serializeDefect, serializeDefectSummary } from "./serializer";
+import { createDefectSchema, defectListQuerySchema, preventionToggleSchema, updateDefectSchema } from "./validation";
+import { getWeekStart } from "./weekBucket";
+import type { PreventionProgress } from "./types";
 
 export const app = express();
 
@@ -24,24 +27,52 @@ app.get("/api/health", (_req, res) => {
 
 app.get(
   "/api/defects",
-  asyncHandler(async (_req, res) => {
-    const defects = await prisma.defect.findMany({
-      orderBy: { createdAt: "desc" },
-      select: {
-        id: true,
-        title: true,
-        module: true,
-        environment: true,
-        severity: true,
-        status: true,
-        affectedCaseIds: true,
-        rootCauseCategory: true,
-        createdAt: true,
-        updatedAt: true
-      }
-    });
+  asyncHandler(async (req, res) => {
+    const query = defectListQuerySchema.parse(req.query);
+    const { status, severity, module, environment, q, page, pageSize } = query;
 
-    res.json(defects.map(serializeDefectSummary));
+    const where: Record<string, unknown> = {};
+    if (status) where.status = status;
+    if (severity) where.severity = severity;
+    if (module) where.module = { contains: module };
+    if (environment) where.environment = environment;
+    if (q) {
+      where.OR = [
+        { title: { contains: q } },
+        { module: { contains: q } },
+        { affectedCaseIds: { contains: q } }
+      ];
+    }
+
+    const [defects, total] = await Promise.all([
+      prisma.defect.findMany({
+        where,
+        orderBy: { createdAt: "desc" },
+        skip: (page - 1) * pageSize,
+        take: pageSize,
+        select: {
+          id: true,
+          title: true,
+          module: true,
+          environment: true,
+          severity: true,
+          status: true,
+          affectedCaseIds: true,
+          rootCauseCategory: true,
+          createdAt: true,
+          updatedAt: true
+        }
+      }),
+      prisma.defect.count({ where })
+    ]);
+
+    res.json({
+      items: defects.map(serializeDefectSummary),
+      page,
+      pageSize,
+      total,
+      totalPages: Math.ceil(total / pageSize)
+    });
   })
 );
 
@@ -62,6 +93,7 @@ app.post(
   asyncHandler(async (req, res) => {
     const input = createDefectSchema.parse(req.body);
     const defect = await prisma.defect.create({ data: input });
+    await recordEvent(defect.id, "CREATED", `Defect created: ${defect.title}`);
     res.status(201).json(serializeDefect(defect));
   })
 );
@@ -80,6 +112,13 @@ app.patch(
       data: input
     });
 
+    if (input.status && input.status !== existing.status) {
+      await recordEvent(defect.id, "STATUS_CHANGED", `Status changed from ${existing.status} to ${input.status}`, {
+        from: existing.status,
+        to: input.status
+      });
+    }
+
     res.json(serializeDefect(defect));
   })
 );
@@ -92,6 +131,7 @@ app.delete(
       throw new HttpError(404, "Defect not found", "NOT_FOUND");
     }
 
+    await recordEvent(existing.id, "DELETED", `Defect deleted: ${existing.title}`);
     await prisma.defect.delete({ where: { id: req.params.id } });
     res.json({ success: true });
   })
@@ -125,11 +165,85 @@ app.post(
         uatScenarios: JSON.stringify(analysis.uatScenarios),
         cabSummary: analysis.cabSummary,
         releaseRisk: analysis.releaseRisk,
-        rollbackConsideration: analysis.rollbackConsideration
+        rollbackConsideration: analysis.rollbackConsideration,
+        // Reconcile prevention progress: keep entries that still exist in new actions
+        preventionProgress: JSON.stringify(
+          reconcilePreventionProgress(
+            parsePreventionProgress(existing.preventionProgress),
+            analysis.preventionActions
+          )
+        )
       }
     });
 
+    await recordEvent(defect.id, "ANALYSIS_GENERATED", `Analysis generated: ${analysis.rootCauseCategory}`, {
+      rootCauseCategory: analysis.rootCauseCategory
+    });
+
     res.json(serializeDefect(defect));
+  })
+);
+
+function reconcilePreventionProgress(
+  existing: PreventionProgress,
+  newActions: string[]
+): PreventionProgress {
+  const reconciled: PreventionProgress = {};
+  for (const action of newActions) {
+    if (existing[action]) {
+      reconciled[action] = existing[action];
+    }
+  }
+  return reconciled;
+}
+
+app.patch(
+  "/api/defects/:id/prevention",
+  asyncHandler(async (req, res) => {
+    const input = preventionToggleSchema.parse(req.body);
+    const existing = await prisma.defect.findUnique({ where: { id: req.params.id } });
+    if (!existing) {
+      throw new HttpError(404, "Defect not found", "NOT_FOUND");
+    }
+
+    const progress = parsePreventionProgress(existing.preventionProgress);
+    progress[input.action] = {
+      done: input.done,
+      updatedAt: new Date().toISOString()
+    };
+
+    const defect = await prisma.defect.update({
+      where: { id: req.params.id },
+      data: { preventionProgress: JSON.stringify(progress) }
+    });
+
+    await recordEvent(defect.id, "PREVENTION_UPDATED", `Prevention action "${input.action}" marked as ${input.done ? "done" : "not done"}`, {
+      action: input.action,
+      done: input.done
+    });
+
+    res.json(serializeDefect(defect));
+  })
+);
+
+app.get(
+  "/api/defects/:id/events",
+  asyncHandler(async (req, res) => {
+    const existing = await prisma.defect.findUnique({ where: { id: req.params.id } });
+    if (!existing) {
+      throw new HttpError(404, "Defect not found", "NOT_FOUND");
+    }
+
+    const events = await prisma.defectEvent.findMany({
+      where: { defectId: req.params.id },
+      orderBy: { createdAt: "desc" }
+    });
+
+    res.json(events.map((event) => ({
+      ...event,
+      detail: event.detail ? JSON.parse(event.detail) : null,
+      createdAt: event.createdAt.toISOString()
+    })));
   })
 );
 
@@ -155,6 +269,38 @@ app.get(
       return acc;
     }, {});
 
+    // Trend: defects created per week
+    const createdPerWeekMap = defects.reduce<Record<string, number>>((acc, defect) => {
+      const week = getWeekStart(defect.createdAt);
+      acc[week] = (acc[week] ?? 0) + 1;
+      return acc;
+    }, {});
+    const createdPerWeek = Object.entries(createdPerWeekMap)
+      .map(([weekStart, count]) => ({ weekStart, count }))
+      .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+
+    // Trend: defects closed per week (bucketed by updatedAt as approximation)
+    const closedDefects = defects.filter((d) => d.status === "Closed");
+    const closedPerWeekMap = closedDefects.reduce<Record<string, number>>((acc, defect) => {
+      const week = getWeekStart(defect.updatedAt);
+      acc[week] = (acc[week] ?? 0) + 1;
+      return acc;
+    }, {});
+    const closedPerWeek = Object.entries(closedPerWeekMap)
+      .map(([weekStart, count]) => ({ weekStart, count }))
+      .sort((a, b) => a.weekStart.localeCompare(b.weekStart));
+
+    // Open defects grouped by root cause category
+    const openDefects = defects.filter((d) => d.status !== "Closed");
+    const openByRootCauseMap = openDefects.reduce<Record<string, number>>((acc, defect) => {
+      const category = defect.rootCauseCategory ?? "Not Analysed";
+      acc[category] = (acc[category] ?? 0) + 1;
+      return acc;
+    }, {});
+    const openByRootCause = Object.entries(openByRootCauseMap)
+      .map(([category, count]) => ({ category, count }))
+      .sort((a, b) => b.count - a.count);
+
     res.json({
       totalDefects: defects.length,
       analysisCoverage: {
@@ -176,7 +322,72 @@ app.get(
         severity: defect.severity,
         status: defect.status,
         createdAt: defect.createdAt.toISOString()
-      }))
+      })),
+      createdPerWeek,
+      closedPerWeek,
+      openByRootCause
+    });
+  })
+);
+
+app.get(
+  "/api/release-pack",
+  asyncHandler(async (_req, res) => {
+    const defects = await prisma.defect.findMany({
+      where: {
+        status: { not: "Closed" },
+        releaseRisk: { in: ["High", "Critical"] }
+      }
+    });
+
+    const allDefects = await prisma.defect.findMany();
+    const totalDefects = allDefects.length;
+    const openDefects = allDefects.filter((d) => d.status !== "Closed");
+    const analysed = allDefects.filter((d) => d.rootCauseCategory).length;
+
+    const riskDistribution = openDefects.reduce<Record<string, number>>((acc, d) => {
+      const risk = d.releaseRisk ?? "Not Assessed";
+      acc[risk] = (acc[risk] ?? 0) + 1;
+      return acc;
+    }, {});
+
+    const qualifyingDefects = defects.map((defect) => {
+      const preventionActions = defect.preventionActions
+        ? (() => { try { const p = JSON.parse(defect.preventionActions); return Array.isArray(p) ? p : []; } catch { return []; } })()
+        : [];
+      const progress = parsePreventionProgress(defect.preventionProgress);
+      const completed = Object.values(progress).filter((entry) => entry.done).length;
+
+      return {
+        id: defect.id,
+        title: defect.title,
+        module: defect.module,
+        severity: defect.severity,
+        status: defect.status,
+        rootCauseCategory: defect.rootCauseCategory,
+        releaseRisk: defect.releaseRisk,
+        preventionProgress: { completed, total: preventionActions.length },
+        cabSummary: defect.cabSummary,
+        rollbackConsideration: defect.rollbackConsideration
+      };
+    });
+
+    res.json({
+      generatedAt: new Date().toISOString(),
+      summary: {
+        totalDefects,
+        openDefects: openDefects.length,
+        qualifyingDefects: qualifyingDefects.length,
+        analysisCoverage: {
+          analysed,
+          total: totalDefects,
+          percent: totalDefects === 0 ? 0 : Math.round((analysed / totalDefects) * 100)
+        },
+        riskDistribution: Object.entries(riskDistribution)
+          .map(([risk, count]) => ({ risk, count }))
+          .sort((a, b) => b.count - a.count)
+      },
+      defects: qualifyingDefects
     });
   })
 );

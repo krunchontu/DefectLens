@@ -24,11 +24,27 @@ model Defect {
   rootCauseExplanation  String?
   similarRiskAreas      String?
   preventionActions     String?
+  preventionProgress    String?
   uatScenarios          String?
   cabSummary            String?
   releaseRisk           String?
   rollbackConsideration String?
 
+  events                DefectEvent[]
+
   createdAt             DateTime @default(now())
   updatedAt             DateTime @updatedAt
+}
+
+model DefectEvent {
+  id        String   @id @default(cuid())
+  defectId  String
+  type      String
+  summary   String
+  detail    String?
+  createdAt DateTime @default(now())
+
+  defect    Defect   @relation(fields: [defectId], references: [id], onDelete: Cascade)
+
+  @@index([defectId])
 }

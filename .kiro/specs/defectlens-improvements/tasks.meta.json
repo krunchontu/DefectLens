@@ -1,0 +1,267 @@
+{
+  "pbtResults": {},
+  "executionHistory": {
+    "2. Add baseline API tests against current behavior": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972366
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163028959
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163117924
+      }
+    ],
+    "3. Persist prevention checklist progress (data + API)": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972431
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163123341
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163154504
+      }
+    ],
+    "4. Wire persistent checklist into the defect detail UI": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972502
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163160293
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163186371
+      }
+    ],
+    "5. Add defect list filtering, search, and pagination (API)": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972578
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163192956
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163206715
+      }
+    ],
+    "6. Add filter/search controls and pagination to the defect list UI": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972658
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163212647
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163226705
+      }
+    ],
+    "7. Add the audit trail model and recording helper": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972718
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163233288
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782181097351
+      }
+    ],
+    "8. Render the audit timeline on the defect detail page": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972784
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782181107345
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782181225339
+      }
+    ],
+    "9. Add trend metrics to the dashboard (API)": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972857
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782181230385
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782181992270
+      }
+    ],
+    "10. Render trend charts on the dashboard UI": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972919
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782181999235
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182135889
+      }
+    ],
+    "11. Add the release-readiness (CAB pack) export (API)": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162972989
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182141851
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182325122
+      }
+    ],
+    "12. Add the release pack view in the UI": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162973070
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182331011
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182490043
+      }
+    ],
+    "13. Make persistence production-ready": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162973151
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182495360
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182656948
+      }
+    ],
+    "14. Harden the AI prompt against injection": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162973209
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182661941
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182822305
+      }
+    ],
+    "15. Add a global notification system to the UI": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162973272
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782182827538
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782183001822
+      }
+    ],
+    "16. Add presentation assets and headline metric": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782162973338
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782183009764
+      },
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782183206905
+      }
+    ],
+    "1. Set up the API test harness": [
+      {
+        "executionId": "6f34bfb2-2a94-4ee3-820d-f187c5c39ef1",
+        "chatSessionId": "sess_14c0aab7-95ed-45fe-9cc6-dd1fe4f70ec5",
+        "timestamp": 1782163023310
+      }
+    ]
+  }
+}
