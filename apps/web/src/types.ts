@@ -64,6 +64,16 @@ export type DefectInput = {
   notes?: string;
 };
 
+export type WeekBucket = {
+  weekStart: string;
+  count: number;
+};
+
+export type RootCauseBucket = {
+  category: string;
+  count: number;
+};
+
 export type Dashboard = {
   totalDefects: number;
   analysisCoverage: { analysed: number; total: number; percent: number };
@@ -72,6 +82,9 @@ export type Dashboard = {
   byRootCause: Array<{ category: string; count: number }>;
   highRiskModules: Array<{ module: string; count: number }>;
   recentDefects: Array<{ id: string; title: string; severity: Severity; status: Status; createdAt: string }>;
+  createdPerWeek: WeekBucket[];
+  closedPerWeek: WeekBucket[];
+  openByRootCause: RootCauseBucket[];
 };
 
 export type DefectListQuery = {
@@ -90,6 +103,47 @@ export type PagedResponse<T> = {
   pageSize: number;
   total: number;
   totalPages: number;
+};
+
+export type DefectEventType =
+  | "CREATED"
+  | "STATUS_CHANGED"
+  | "ANALYSIS_GENERATED"
+  | "PREVENTION_UPDATED"
+  | "DELETED";
+
+export type DefectEvent = {
+  id: string;
+  defectId: string;
+  type: DefectEventType;
+  summary: string;
+  detail: Record<string, unknown> | null;
+  createdAt: string;
+};
+
+export type ReleasePackDefect = {
+  id: string;
+  title: string;
+  module: string;
+  severity: Severity;
+  status: Status;
+  rootCauseCategory: string | null;
+  releaseRisk: string | null;
+  preventionProgress: { completed: number; total: number };
+  cabSummary: string | null;
+  rollbackConsideration: string | null;
+};
+
+export type ReleasePack = {
+  generatedAt: string;
+  summary: {
+    totalDefects: number;
+    openDefects: number;
+    qualifyingDefects: number;
+    analysisCoverage: { analysed: number; total: number; percent: number };
+    riskDistribution: Array<{ risk: string; count: number }>;
+  };
+  defects: ReleasePackDefect[];
 };
 
 export type ApiError = {

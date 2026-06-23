@@ -94,3 +94,164 @@ describe("GET /api/dashboard", () => {
     expect(res.body.highRiskModules.length).toBeLessThanOrEqual(5);
   });
 });
+
+describe("GET /api/dashboard - trend metrics", () => {
+  it("returns empty arrays for trend fields when no defects exist", async () => {
+    const res = await request(app).get("/api/dashboard");
+    expect(res.status).toBe(200);
+    expect(res.body.createdPerWeek).toEqual([]);
+    expect(res.body.closedPerWeek).toEqual([]);
+    expect(res.body.openByRootCause).toEqual([]);
+  });
+
+  it("buckets created defects by ISO week (Monday start)", async () => {
+    // Create defects directly with known createdAt dates
+    // 2024-01-08 is a Monday, 2024-01-15 is the next Monday
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Week 1 defect A",
+        createdAt: new Date("2024-01-09T10:00:00Z") // Tuesday of week starting 2024-01-08
+      }
+    });
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Week 1 defect B",
+        createdAt: new Date("2024-01-12T10:00:00Z") // Friday of week starting 2024-01-08
+      }
+    });
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Week 2 defect",
+        createdAt: new Date("2024-01-16T10:00:00Z") // Tuesday of week starting 2024-01-15
+      }
+    });
+
+    const res = await request(app).get("/api/dashboard");
+    expect(res.status).toBe(200);
+    expect(res.body.createdPerWeek).toEqual([
+      { weekStart: "2024-01-08", count: 2 },
+      { weekStart: "2024-01-15", count: 1 }
+    ]);
+  });
+
+  it("buckets closed defects by updatedAt week", async () => {
+    // Closed defect updated on 2024-01-10 (week of 2024-01-08)
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Closed A",
+        status: "Closed",
+        createdAt: new Date("2024-01-05T10:00:00Z"),
+        updatedAt: new Date("2024-01-10T10:00:00Z")
+      }
+    });
+    // Closed defect updated on 2024-01-17 (week of 2024-01-15)
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Closed B",
+        status: "Closed",
+        createdAt: new Date("2024-01-05T10:00:00Z"),
+        updatedAt: new Date("2024-01-17T10:00:00Z")
+      }
+    });
+    // Open defect — should NOT appear in closedPerWeek
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Still Open",
+        status: "Open",
+        createdAt: new Date("2024-01-10T10:00:00Z"),
+        updatedAt: new Date("2024-01-10T10:00:00Z")
+      }
+    });
+
+    const res = await request(app).get("/api/dashboard");
+    expect(res.status).toBe(200);
+    expect(res.body.closedPerWeek).toEqual([
+      { weekStart: "2024-01-08", count: 1 },
+      { weekStart: "2024-01-15", count: 1 }
+    ]);
+  });
+
+  it("groups open defects by root cause category", async () => {
+    // Open defect with root cause
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Open with cause A",
+        status: "Open",
+        rootCauseCategory: "Development Bug"
+      }
+    });
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Open with cause B",
+        status: "Open",
+        rootCauseCategory: "Development Bug"
+      }
+    });
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Open with different cause",
+        status: "In Analysis",
+        rootCauseCategory: "Requirements Gap"
+      }
+    });
+    // Closed defect — should NOT appear in openByRootCause
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Closed defect",
+        status: "Closed",
+        rootCauseCategory: "Data Issue"
+      }
+    });
+    // Open defect without analysis
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Open no analysis",
+        status: "Open"
+      }
+    });
+
+    const res = await request(app).get("/api/dashboard");
+    expect(res.status).toBe(200);
+
+    // Should have 3 categories: Development Bug (2), Requirements Gap (1), Not Analysed (1)
+    // Sorted descending by count
+    expect(res.body.openByRootCause).toEqual([
+      { category: "Development Bug", count: 2 },
+      { category: "Not Analysed", count: 1 },
+      { category: "Requirements Gap", count: 1 }
+    ]);
+  });
+
+  it("sorts createdPerWeek chronologically", async () => {
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Later week",
+        createdAt: new Date("2024-03-20T10:00:00Z")
+      }
+    });
+    await testPrisma.defect.create({
+      data: {
+        ...validDefectInput(),
+        title: "Earlier week",
+        createdAt: new Date("2024-01-10T10:00:00Z")
+      }
+    });
+
+    const res = await request(app).get("/api/dashboard");
+    expect(res.status).toBe(200);
+    const weeks = res.body.createdPerWeek.map((w: { weekStart: string }) => w.weekStart);
+    expect(weeks[0] < weeks[1]).toBe(true);
+  });
+});

@@ -2,6 +2,8 @@
 
 AI-assisted defect prevention tracker for root-cause classification, missing UAT scenario generation, preventive delivery actions, and CAB-ready release summaries.
 
+> **Headline metric:** 100% Prevention Coverage — every defect generates root-cause analysis, prevention actions, and UAT scenarios. The dashboard tracks analysis coverage in real time so the team always knows where gaps remain.
+
 ## Why This Matters
 
 DefectLens is built around a shift-left delivery mindset: defects are not only tickets to close, they are signals about weak requirements, missed test coverage, release-control gaps, and repeatable prevention opportunities.
@@ -37,11 +39,20 @@ Health: http://localhost:3001/api/health
 
 | Variable | Required | Notes |
 | --- | --- | --- |
-| `DATABASE_URL` | Yes | SQLite path. Local default is `file:./dev.db`, resolved under `prisma/`. |
+| `DATABASE_URL` | Yes | `file:./dev.db` for local SQLite (resolved under `prisma/`), or a `postgresql://` connection string for production. |
 | `OPENAI_API_KEY` | No | Leave blank to use deterministic mock analysis. |
 | `PORT` | No | API port. Defaults to `3001`. |
 | `VITE_API_BASE_URL` | Production only | Railway API origin for deployed frontend builds. Leave blank locally. |
 | `CORS_ORIGIN` | Production only | Vercel frontend origin allowed by the Railway API. |
+
+### Database Provider Strategy
+
+DefectLens uses **SQLite** for local development and **Postgres** for production deployments.
+
+- **Local development**: No extra setup needed. The default `DATABASE_URL=file:./dev.db` in `.env` uses the SQLite provider already configured in `prisma/schema.prisma`.
+- **Production (Postgres)**: Set `DATABASE_URL` to your Postgres connection string (e.g. `postgresql://user:pass@host:5432/defectlens`). You must also change the `provider` in `prisma/schema.prisma` from `"sqlite"` to `"postgresql"` before running `prisma migrate` or `prisma db push` against the production database.
+
+The API validates `DATABASE_URL` at startup and will fail fast with a clear error if the variable is missing or has an unrecognized format (must start with `file:`, `postgresql://`, or `postgres://`).
 
 ## 3-Minute Demo Workflow
 
@@ -54,10 +65,19 @@ Health: http://localhost:3001/api/health
 
 ## Screenshots
 
-TODO: Add real screenshots after running the app locally.
-- docs/screenshots/dashboard.png
-- docs/screenshots/defect-detail-ai-analysis.png
-- docs/screenshots/create-defect.png
+> See [docs/screenshots/README.md](docs/screenshots/README.md) for capture instructions.
+
+### Dashboard
+
+![Dashboard with KPIs, trend charts, and hero metric](docs/screenshots/dashboard.png)
+
+### Defect Detail with AI Analysis
+
+![Defect detail showing root-cause analysis, UAT scenarios, and prevention actions](docs/screenshots/defect-detail-ai-analysis.png)
+
+### Create Defect
+
+![Create defect form](docs/screenshots/create-defect.png)
 
 ## Portfolio Positioning
 
@@ -65,17 +85,20 @@ DefectLens demonstrates Business Analyst, Technical PM, UAT, release governance,
 
 ## Future Improvements
 
-- Persist prevention-checklist completion state per defect.
-- Add API tests for validation, not-found handling, and mock analysis.
 - Add deployment seed tooling for hosted demos.
-- Add exportable release-readiness reports.
 - Add configurable root-cause taxonomy for different delivery domains.
 
 ## Deployment Notes
 
-### Railway API
+### Railway API (Postgres)
 
-Railway should run `npm install` and `npm run build`. Set `DATABASE_URL`, optional `OPENAI_API_KEY`, `PORT`, and `CORS_ORIGIN` to the Vercel origin. SQLite on Railway uses an ephemeral filesystem unless a persistent volume is attached, so use a volume or reseed after deployment for portfolio demos.
+1. Provision a Postgres add-on (Railway provides one-click Postgres).
+2. Set `DATABASE_URL` to the Postgres connection string provided by Railway.
+3. Change `provider` in `prisma/schema.prisma` to `"postgresql"` (or maintain a production-specific schema override).
+4. Railway should run `npm install && npx prisma db push && npm run build`. Set `PORT`, optional `OPENAI_API_KEY`, and `CORS_ORIGIN` to the Vercel origin.
+5. Data persists across deploys — no ephemeral filesystem concerns.
+
+> **Tip:** For quick portfolio demos you can still use SQLite on Railway with a persistent volume attached, but Postgres is recommended for production reliability.
 
 ### Vercel Frontend
 

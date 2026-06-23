@@ -1,7 +1,7 @@
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate } from "react-router-dom";
 import { api } from "../api";
-import type { Dashboard } from "../types";
+import type { Dashboard, WeekBucket, RootCauseBucket } from "../types";
 
 function BarList({ items, labelKey }: { items: Array<Record<string, string | number>>; labelKey: string }) {
   const max = Math.max(1, ...items.map((item) => Number(item.count)));
@@ -20,6 +20,63 @@ function BarList({ items, labelKey }: { items: Array<Record<string, string | num
           </div>
           <div className="bar-track" aria-hidden="true">
             <span style={{ width: `${(Number(item.count) / max) * 100}%` }} />
+          </div>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function formatWeekLabel(weekStart: string): string {
+  const date = new Date(weekStart);
+  return date.toLocaleDateString(undefined, { month: "short", day: "numeric" });
+}
+
+function WeeklyTrendChart({ data, color }: { data: WeekBucket[]; color: string }) {
+  if (data.length === 0) {
+    return <p className="empty-inline">No data in this period.</p>;
+  }
+
+  const max = Math.max(1, ...data.map((d) => d.count));
+
+  return (
+    <div className="trend-chart">
+      {data.map((bucket) => (
+        <div className="trend-bar-col" key={bucket.weekStart}>
+          <span className="trend-bar-value">{bucket.count}</span>
+          <div className="trend-bar-track">
+            <span
+              className="trend-bar-fill"
+              style={{
+                height: `${(bucket.count / max) * 100}%`,
+                background: color
+              }}
+            />
+          </div>
+          <span className="trend-bar-label">{formatWeekLabel(bucket.weekStart)}</span>
+        </div>
+      ))}
+    </div>
+  );
+}
+
+function OpenByRootCauseChart({ data }: { data: RootCauseBucket[] }) {
+  if (data.length === 0) {
+    return <p className="empty-inline">No open defects with root causes.</p>;
+  }
+
+  const max = Math.max(1, ...data.map((d) => d.count));
+
+  return (
+    <div className="bar-list">
+      {data.map((item) => (
+        <div className="bar-row" key={item.category}>
+          <div className="bar-label">
+            <span>{item.category}</span>
+            <strong>{item.count}</strong>
+          </div>
+          <div className="bar-track" aria-hidden="true">
+            <span style={{ width: `${(item.count / max) * 100}%` }} />
           </div>
         </div>
       ))}
@@ -51,6 +108,14 @@ export default function DashboardPage() {
     };
   }, [dashboard]);
 
+  const preventionCoverage = useMemo(() => {
+    if (!dashboard) return { percent: 0, covered: 0, total: 0 };
+    const total = dashboard.totalDefects;
+    const covered = dashboard.analysisCoverage.analysed;
+    const percent = total > 0 ? Math.round((covered / total) * 100) : 0;
+    return { percent, covered, total };
+  }, [dashboard]);
+
   if (loading) {
     return <div className="state-card">Loading dashboard...</div>;
   }
@@ -69,6 +134,14 @@ export default function DashboardPage() {
         <div>
           <p className="eyebrow">Release quality view</p>
           <h2>Dashboard</h2>
+        </div>
+      </div>
+
+      <div className="hero-metric">
+        <div className="hero-metric-value">{preventionCoverage.percent}%</div>
+        <div className="hero-metric-label">Prevention Coverage</div>
+        <div className="hero-metric-detail">
+          {preventionCoverage.covered} of {preventionCoverage.total} defects have root-cause analysis, prevention actions, and UAT scenarios
         </div>
       </div>
 
@@ -100,9 +173,27 @@ export default function DashboardPage() {
 
       <div className="dashboard-grid">
         <section className="panel">
+          <h3>Defects Created Per Week</h3>
+          <WeeklyTrendChart data={dashboard.createdPerWeek ?? []} color="var(--primary)" />
+        </section>
+        <section className="panel">
+          <h3>Defects Closed Per Week</h3>
+          <WeeklyTrendChart data={dashboard.closedPerWeek ?? []} color="#16a34a" />
+        </section>
+      </div>
+
+      <div className="dashboard-grid">
+        <section className="panel">
+          <h3>Open by Root Cause</h3>
+          <OpenByRootCauseChart data={dashboard.openByRootCause ?? []} />
+        </section>
+        <section className="panel">
           <h3>Root Cause Mix</h3>
           <BarList items={dashboard.byRootCause} labelKey="category" />
         </section>
+      </div>
+
+      <div className="dashboard-grid">
         <section className="panel">
           <h3>Severity</h3>
           <BarList items={dashboard.bySeverity} labelKey="severity" />

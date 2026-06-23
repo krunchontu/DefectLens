@@ -2,7 +2,8 @@ import { useEffect, useState } from "react";
 import type { ReactNode } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { api } from "../api";
-import type { Defect, Status } from "../types";
+import { useNotify } from "../NotificationContext";
+import type { Defect, DefectEvent, Status } from "../types";
 
 function InfoBlock({ label, children }: { label: string; children: ReactNode }) {
   return (
@@ -16,12 +17,14 @@ function InfoBlock({ label, children }: { label: string; children: ReactNode }) 
 export default function DefectDetailPage() {
   const { id } = useParams();
   const navigate = useNavigate();
+  const notify = useNotify();
   const [defect, setDefect] = useState<Defect | null>(null);
   const [loading, setLoading] = useState(true);
   const [actionLoading, setActionLoading] = useState<string | null>(null);
   const [error, setError] = useState<string | null>(null);
-  const [analysisError, setAnalysisError] = useState<string | null>(null);
   const [copied, setCopied] = useState(false);
+  const [events, setEvents] = useState<DefectEvent[]>([]);
+  const [eventsLoading, setEventsLoading] = useState(false);
 
   const load = () => {
     if (!id) {
@@ -30,9 +33,22 @@ export default function DefectDetailPage() {
     setLoading(true);
     api
       .getDefect(id)
-      .then(setDefect)
+      .then((d) => {
+        setDefect(d);
+        loadEvents();
+      })
       .catch((err: Error) => setError(err.message))
       .finally(() => setLoading(false));
+  };
+
+  const loadEvents = () => {
+    if (!id) return;
+    setEventsLoading(true);
+    api
+      .getDefectEvents(id)
+      .then(setEvents)
+      .catch(() => setEvents([]))
+      .finally(() => setEventsLoading(false));
   };
 
   useEffect(load, [id]);
@@ -41,12 +57,12 @@ export default function DefectDetailPage() {
     if (!id) {
       return;
     }
-    setAnalysisError(null);
     setActionLoading("analysis");
     try {
       setDefect(await api.analyzeDefect(id));
+      notify("success", "AI analysis generated successfully");
     } catch (err) {
-      setAnalysisError(err instanceof Error ? err.message : "Analysis failed");
+      notify("error", err instanceof Error ? err.message : "Analysis failed");
     } finally {
       setActionLoading(null);
     }
@@ -59,8 +75,9 @@ export default function DefectDetailPage() {
     setActionLoading("status");
     try {
       setDefect(await api.updateDefect(id, { status }));
+      notify("success", `Defect status changed to ${status}`);
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Status update failed");
+      notify("error", err instanceof Error ? err.message : "Status update failed");
     } finally {
       setActionLoading(null);
     }
@@ -73,9 +90,10 @@ export default function DefectDetailPage() {
     setActionLoading("delete");
     try {
       await api.deleteDefect(id);
+      notify("success", "Defect deleted");
       navigate("/defects");
     } catch (err) {
-      setError(err instanceof Error ? err.message : "Delete failed");
+      notify("error", err instanceof Error ? err.message : "Delete failed");
       setActionLoading(null);
     }
   };
@@ -109,6 +127,7 @@ export default function DefectDetailPage() {
       const updated = await api.togglePrevention(id, action, done);
       setDefect(updated);
     } catch {
+      notify("error", "Failed to update prevention progress");
       // Revert on failure by reloading
       load();
     }
@@ -185,13 +204,6 @@ export default function DefectDetailPage() {
             <div className="analysis-loading">
               <span className="spinner" />
               <p>Analysing defect...</p>
-            </div>
-          ) : analysisError ? (
-            <div className="state-card error compact">
-              {analysisError}
-              <button className="secondary-button" onClick={analyze}>
-                Retry
-              </button>
             </div>
           ) : !analysed ? (
             <div className="state-card compact">Not yet analysed.</div>
@@ -278,6 +290,29 @@ export default function DefectDetailPage() {
           )}
         </section>
       </div>
+
+      <section className="panel timeline-panel">
+        <h3>Audit Timeline</h3>
+        {eventsLoading ? (
+          <p className="empty-inline">Loading events...</p>
+        ) : events.length === 0 ? (
+          <p className="empty-inline">No events recorded yet.</p>
+        ) : (
+          <ol className="timeline">
+            {events.map((event) => (
+              <li key={event.id} className="timeline-item">
+                <span className={`timeline-icon timeline-icon--${event.type.toLowerCase()}`} aria-hidden="true" />
+                <div className="timeline-content">
+                  <p className="timeline-summary">{event.summary}</p>
+                  <time className="timeline-date" dateTime={event.createdAt}>
+                    {new Date(event.createdAt).toLocaleString()}
+                  </time>
+                </div>
+              </li>
+            ))}
+          </ol>
+        )}
+      </section>
     </section>
   );
 }

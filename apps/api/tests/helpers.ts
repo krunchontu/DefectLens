@@ -3,6 +3,7 @@ import { PrismaClient } from "@prisma/client";
 export const testPrisma = new PrismaClient();
 
 export async function resetDb() {
+  await testPrisma.defectEvent.deleteMany();
   await testPrisma.defect.deleteMany();
 }
 

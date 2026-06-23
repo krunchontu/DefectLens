@@ -1,4 +1,4 @@
-import type { ApiError, Dashboard, Defect, DefectInput, DefectListQuery, DefectSummary, PagedResponse } from "./types";
+import type { ApiError, Dashboard, Defect, DefectEvent, DefectInput, DefectListQuery, DefectSummary, PagedResponse, ReleasePack } from "./types";
 
 export const API_BASE = import.meta.env.DEV ? "/api" : `${import.meta.env.VITE_API_BASE_URL}/api`;
 
@@ -48,5 +48,7 @@ export const api = {
   deleteDefect: (id: string) => request<{ success: true }>(`/defects/${id}`, { method: "DELETE" }),
   analyzeDefect: (id: string) => request<Defect>(`/defects/${id}/analyze`, { method: "POST" }),
   togglePrevention: (id: string, action: string, done: boolean) =>
-    request<Defect>(`/defects/${id}/prevention`, { method: "PATCH", body: JSON.stringify({ action, done }) })
+    request<Defect>(`/defects/${id}/prevention`, { method: "PATCH", body: JSON.stringify({ action, done }) }),
+  getDefectEvents: (id: string) => request<DefectEvent[]>(`/defects/${id}/events`),
+  getReleasePack: () => request<ReleasePack>("/release-pack")
 };
